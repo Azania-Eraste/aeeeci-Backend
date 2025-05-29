@@ -1,0 +1,253 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block header %}
+<div></div>
+{% endblock %}
+
+{% block content %}
+    <!-- Blog Details Hero Begin -->
+    <section class="blog-details-hero set-bg" data-setbg="{% static 'img/blog/details/details-hero.jpg' %}">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="blog__details__hero__text">
+                        <h2>{{ article.titre }}</h2>
+                        <ul>
+                            <li>By {{ article.auteur_id.username }}</li>
+                            <li>{{ article.date_de_publicatio }}</li>
+                            <li>{{ article.article_commentaire_ids.count }} Commentaires</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Blog Details Hero End -->
+
+    <!-- Blog Details Section Begin -->
+    <section class="blog-details spad">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-5 order-md-1 order-2">
+                    <div class="blog__sidebar">
+                        <div class="blog__sidebar__item">
+                            <h4>Articles récents</h4>
+                            <div class="blog__sidebar__recent">
+                                {% for recent in recents %}
+                                    <a href="{% url 'blog:detail' recent.slug %}" class="blog__sidebar__recent__item">
+                                        <div class="blog__sidebar__recent__item__pic">
+                                            <img src="{{ recent.couverture.url }}" alt="">
+                                        </div>
+                                        <div class="blog__sidebar__recent__item__text">
+                                            <h6>{{ recent.titre }}</h6>
+                                            <span>{{ recent.date_de_publicatio }}</span>
+                                        </div>
+                                    </a>
+                                {% empty %}
+                                    <p>Aucun article récent disponible.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8 col-md-7 order-md-1 order-1">
+                    <div class="blog__details__text">
+                        <img src="{{ article.couverture.url }}" alt="">
+                        {{ article.contenu | safe }}
+                    </div>
+                    <div class="blog__details__content">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="blog__details__author">
+                                    <div class="blog__details__author__text">
+                                        <h6>{{ article.auteur_id.username }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="blog__details__widget">
+                                    <ul>
+                                        <li><span>Catégorie :</span> {{ article.categorie_id.nom }}</li>
+                                        <li><span>Tags :</span>
+                                            {% for tag in article.tag_ids.all %}
+                                                {{ tag.nom }}{% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                Aucun tag
+                                            {% endfor %}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section des commentaires -->
+                    <div class="blog__details__comments mt-5">
+                        <h4 class="text-2xl font-semibold mb-4">Commentaires ({{ article.article_commentaire_ids.count }})</h4>
+                        <div class="space-y-4">
+                            {% for commentaire in article.article_commentaire_ids.all %}
+                                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-sm">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="font-semibold text-lg text-blue-600">{{ commentaire.auteur_id.username }}</span>
+                                            <span class="text-sm text-gray-500">{{ commentaire.created_at | date:"d M Y H:i" }}</span>
+                                        </div>
+                                        {% if request.user == commentaire.auteur_id %}
+                                            <div class="flex space-x-2">
+                                                <a href="{% url 'blog:update_comment' article.slug commentaire.id %}" class="text-sm text-yellow-600 hover:text-yellow-700 font-medium">
+                                                    Modifier
+                                                </a>
+                                                <a href="{% url 'blog:delete_comment' article.slug commentaire.id %}" class="text-sm text-red-600 hover:text-red-700 font-medium" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?');">
+                                                    Supprimer
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-gray-700 leading-relaxed">{{ commentaire.contenu }}</p>
+                                </div>
+                            {% empty %}
+                                <p class="text-gray-500 italic">Aucun commentaire pour cet article.</p>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Formulaire de commentaire -->
+                        <div class="mt-6">
+                            <h4 class="text-xl font-semibold mb-3">Ajouter un commentaire</h4>
+                            {% if user.is_authenticated %}
+                                {% if messages %}
+                                    <div class="mb-4">
+                                        {% for message in messages %}
+                                            <div class="p-3 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                                {{ message }}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <form method="POST" class="space-y-4">
+                                    {% csrf_token %}
+                                    {% if form_comment.errors %}
+                                        <div class="p-3 bg-red-100 text-red-700 rounded-lg">
+                                            {{ form_comment.errors }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <label for="{{ form_comment.contenu.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                            {{ form_comment.contenu.label }}
+                                        </label>
+                                        {{ form_comment.contenu }}
+                                    </div>
+                                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                                        Envoyer
+                                    </button>
+                                </form>
+                            {% else %}
+                                <p class="text-gray-600">
+                                    <a href="{% url 'Authentification:login' %}" class="text-blue-600 hover:underline">Connectez-vous</a> pour laisser un commentaire.
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Blog Details Section End -->
+
+    <!-- Related Blog Section Begin -->
+    <section class="related-blog spad">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="section-title related-blog-title">
+                        <h2>Articles similaires</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                {% for related_article in same_tag %}
+                    <div class="col-lg-4 col-md-4 col-sm-6">
+                        <div class="blog__item">
+                            <div class="blog__item__pic">
+                                <img src="{{ related_article.couverture.url }}" alt="">
+                            </div>
+                            <div class="blog__item__text">
+                                <ul>
+                                    <li><i class="fa fa-calendar-o"></i> {{ related_article.date_de_publicatio }}</li>
+                                    <li><i class="fa fa-comment-o"></i> {{ related_article.article_commentaire_ids.count }}</li>
+                                </ul>
+                                <h5><a href="{% url 'blog:detail' related_article.slug %}">{{ related_article.titre }}</a></h5>
+                                <p>{{ related_article.resume }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-lg-12">
+                        <p class="text-gray-500 italic">Aucun article similaire trouvé.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    <!-- Related Blog Section End -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Script chargé !"); // Vérifier si le script est chargé
+
+    const likeButton = document.querySelector('.like-btn');
+    console.log("Bouton Like trouvé :", likeButton); // Vérifier si le bouton est trouvé
+
+    if (likeButton) {
+        likeButton.addEventListener('click', function() {
+            console.log("Bouton Like cliqué !"); // Vérifier si le clic est détecté
+
+            const slug = this.getAttribute('data-article-slug');
+            const url = `/blog/like/${slug}/`;
+            console.log("URL de la requête :", url); // Vérifier l'URL
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                console.log("Réponse reçue :", response); // Vérifier la réponse
+                return response.json();
+            })
+            .then(data => {
+                console.log("Données JSON :", data); // Vérifier les données renvoyées
+
+                // Mettre à jour l'icône du bouton
+                const icon = this.querySelector('i');
+                if (data.liked) {
+                    this.classList.add('liked');
+                    icon.classList.remove('fa-heart-o');
+                    icon.classList.add('fa-heart');
+                    this.title = "Retirer le like";
+                } else {
+                    this.classList.remove('liked');
+                    icon.classList.remove('fa-heart');
+                    icon.classList.add('fa-heart-o');
+                    this.title = "Liker";
+                }
+
+                // Mettre à jour le nombre de likes
+                const likeCountElement = document.querySelector(`.like-count[data-article-slug="${slug}"]`);
+                likeCountElement.textContent = data.like_count;
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue. Veuillez réessayer.');
+            });
+        });
+    } else {
+        console.log("Aucun bouton Like trouvé !");
+    }
+});
+</script>
+{% endblock %}

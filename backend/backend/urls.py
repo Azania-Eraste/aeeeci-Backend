@@ -19,7 +19,7 @@ from django.urls import path,include
 from django.conf.urls.static import static
 from django.conf import settings
 from event_app import urls as event_url
-from actu_app import urls as actu_url
+from blog import urls as actu_url
 from auth_app import urls as auth_url
 
 urlpatterns = [
@@ -27,4 +27,5 @@ urlpatterns = [
     path('', include(event_url)),
     path('', include(actu_url)),
     path('', include(auth_url)),
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
